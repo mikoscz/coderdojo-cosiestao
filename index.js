@@ -1,5 +1,6 @@
 let mymap = L.map("mapid").setView([49.8217096, 19.054798], 15);
 let activeLocation = null;
+let markers = loadMarkers();
 
 L.tileLayer(
   "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
@@ -15,6 +16,8 @@ L.tileLayer(
   }
 ).addTo(mymap);
 
+markers.forEach(renderMarker);
+
 function showModal() {
   let modal = document.querySelector(".modal");
   modal.className = "modal active";
@@ -24,27 +27,44 @@ function hideModal() {
   let modal = document.querySelector(".modal");
   modal.className = "modal";
 
-  document.querySelector('input[name=reason]').value = "";
+  document.querySelector("input[name=reason]").value = "";
 }
 
-function markPlace(reason) {
-  let marker = L.marker([activeLocation.lat, activeLocation.lng]).addTo(mymap);
+function renderMarker({ lat, lng, reason }) {
+  let marker = L.marker([lat, lng]).addTo(mymap);
   marker.bindPopup(`<span class="popup">${reason}</span>`).openPopup();
 }
 
-function handleFormSubmit(e) {
-  let reason = e.target.querySelector('input').value;
+function markPlace(reason) {
+  renderMarker({ lat: activeLocation.lat, lng: activeLocation.lng, reason });
+  saveMarker(activeLocation.lat, activeLocation.lng, reason);
+}
 
-  e.preventDefault()
-  markPlace(reason)
-  hideModal()
+function handleFormSubmit(e) {
+  let reason = e.target.querySelector("input").value;
+
+  e.preventDefault();
+  markPlace(reason);
+  hideModal();
 }
 
 let popup = L.popup();
 
 function onMapClick(e) {
-  activeLocation = e.latlng
+  activeLocation = e.latlng;
   showModal();
+}
+
+function saveMarker(lat, lng, reason) {
+  markers.push({ lat, lng, reason });
+  localStorage.setItem("markers", JSON.stringify(markers));
+}
+
+function loadMarkers() {
+  let markersAsString = localStorage.getItem("markers");
+  let markers = JSON.parse(markersAsString);
+
+  return markers || [];
 }
 
 mymap.on("click", onMapClick);
